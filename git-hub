@@ -3,9 +3,10 @@
 
 # Git command line interface to GitHub.
 #
-# Written by Leandro Lucarella <leandro.lucarella@sociomantic.com>
+# Written by Leandro Lucarella <leandro.lucarella@dunnhumby.com>
 #
-# Copyright (c) 2013 by Sociomantic Labs GmbH
+# Copyright (c) 2013 dunnhumby Germany GmbH.
+# All rights reserved.
 #
 # This program is written as a single file for practical reasons, this way
 # users can download just one file and use it, while if it's spread across
@@ -822,7 +823,7 @@ class CloneCmd (object):
         # is enough complexity with --upstreamremote and --forkremote, so ask
         # the user to use those instead
         for a in args.unknown_args:
-            if a in ('-o', '--origin') or a.startwith('-o', '--origin='):
+            if a in ('-o', '--origin') or a.startswith('-o', '--origin='):
                 die("Please use --forkremote or --upstreamremote to name your "
                         "remotes instead of using Git's `{}` option!", a)
         # If we just forked the repo, GitHub might still be doing the actual
@@ -950,15 +951,15 @@ class CloneCmd (object):
             warnf("Current git version ({}) has an issue when "
                 "using the option push.default=simple and "
                 "using the --triangular workflow. Please "
-                "use Git {} or newer, or change push.default "
+                "use git {} or newer, or change push.default "
                 "to 'current' for example. Ignoring the "
                 "--triangular option...", cur_ver, min_ver)
             return False
         return True
 
 
-# Utility class that group common functionality used by the multiple `git hub
-# issue` (and `git hub pull`) subcommands.
+# Utility class that groups common functionality used by the multiple 
+# `git hub issue` (and `git hub pull`) subcommands.
 class IssueUtil (object):
 
     cmd_required_config = ['upstream', 'oauthtoken']
@@ -972,7 +973,7 @@ class IssueUtil (object):
 # Please enter the title and description below.
 #
 # The first line is interpreted as the title. An optional description
-# can follow after and empty line.
+# can follow after an empty line.
 #
 # Example:
 #
@@ -1072,7 +1073,7 @@ class IssueUtil (object):
     def url(cls, number=None):
         s = '/repos/%s/%s' % (config.upstream, cls.gh_path)
         if number:
-            s += '/' + number
+            s += '/' + str(number)
         return s
 
     @classmethod
@@ -1105,7 +1106,7 @@ class IssueCmd (CmdGroup):
         def setup_parser(cls, parser):
             parser.add_argument('-c', '--closed',
                 action='store_true', default=False,
-                help="show only closed pull requests")
+                help="show only closed %ss" % cls.name)
             parser.add_argument('-C', '--created-by-me',
                 action='store_true',
                 help=("show only %ss created by me" %
@@ -1142,7 +1143,7 @@ class IssueCmd (CmdGroup):
         @classmethod
         def setup_parser(cls, parser):
             parser.add_argument('issues',
-                nargs='+', metavar=cls.id_var,
+                nargs='+', metavar=cls.id_var, type=int,
                 help="number identifying the %s to show"
                         % cls.name)
             parser.add_argument('--summary',
@@ -1179,7 +1180,7 @@ class IssueCmd (CmdGroup):
                 metavar='USER',
                 help="assign a user to the %s; must be a "
                 "valid GitHub login name" % cls.name)
-            parser.add_argument('-M', '--milestone', metavar='ID',
+            parser.add_argument('-M', '--milestone', metavar='ID', type=int,
                 help="assign the milestone identified by the "
                 "number ID to the %s" % cls.name)
         @classmethod
@@ -1195,10 +1196,13 @@ class IssueCmd (CmdGroup):
         cmd_help = "update an existing issue"
         @classmethod
         def setup_parser(cls, parser):
-            parser.add_argument('issue', metavar=cls.id_var,
+            parser.add_argument('issue', metavar=cls.id_var, type=int,
                 help="number identifying the %s to update"
                         % cls.name)
-            parser.add_argument('-m', '--message', metavar='MSG',
+            group = parser.add_mutually_exclusive_group()
+            group.add_argument('-t', '--title', metavar='TITLE',
+                help="new %s title" % cls.name)
+            group.add_argument('-m', '--message', metavar='MSG',
                 help="new %s title (and description); the "
                 "first line is used as the title and "
                 "any text after an empty line is used as "
@@ -1227,7 +1231,7 @@ class IssueCmd (CmdGroup):
                 metavar='USER',
                 help="assign a user to the %s; must be a "
                 "valid GitHub login name" % cls.name)
-            parser.add_argument('-M', '--milestone', metavar='ID',
+            parser.add_argument('-M', '--milestone', metavar='ID', type=int,
                 help="assign the milestone identified by the "
                 "number ID to the %s" % cls.name)
         @classmethod
@@ -1252,10 +1256,13 @@ class IssueCmd (CmdGroup):
             if args.milestone is not None:
                 params['milestone'] = args.milestone
             msg = args.message
+            title = args.title
+            if title:
+                params['title'] = title
             if args.edit_message:
                 if not msg:
                     issue = req.get(url)
-                    msg = issue['title']
+                    msg = title if title else issue['title']
                     if issue['body']:
                         msg += '\n\n' + issue['body']
                 msg = cls.editor(msg)
@@ -1270,7 +1277,7 @@ class IssueCmd (CmdGroup):
         cmd_help = "add a comment to an existing issue"
         @classmethod
         def setup_parser(cls, parser):
-            parser.add_argument('issue', metavar=cls.id_var,
+            parser.add_argument('issue', metavar=cls.id_var, type=int,
                 help="number identifying the %s to comment on"
                         % cls.name)
             parser.add_argument('-m', '--message', metavar='MSG',
@@ -1287,7 +1294,7 @@ class IssueCmd (CmdGroup):
         cmd_help = "close an opened issue"
         @classmethod
         def setup_parser(cls, parser):
-            parser.add_argument('issue', metavar=cls.id_var,
+            parser.add_argument('issue', metavar=cls.id_var, type=int,
                 help="number identifying the %s to close"
                         % cls.name)
             parser.add_argument('-m', '--message', metavar='MSG',
@@ -1309,8 +1316,8 @@ class IssueCmd (CmdGroup):
             cls.print_issue_summary(issue)
 
 
-# Utility class that group common functionality used by the multiple `git hub
-# pull`) subcommands specifically.
+# Utility class that groups common functionality used by the multiple 
+# `git hub pull`) subcommands specifically.
 class PullUtil (IssueUtil):
 
     name = 'pull request'
@@ -1487,7 +1494,7 @@ class PullCmd (IssueCmd):
                 "to a pull request)"
         @classmethod
         def setup_parser(cls, parser):
-            parser.add_argument('issue', metavar='ISSUE',
+            parser.add_argument('issue', metavar='ISSUE', type=int,
                 help="pull request ID to attach code to")
             parser.add_argument('head', metavar='HEAD', nargs='?',
                 help="branch (or git ref) where your changes "
@@ -1538,7 +1545,7 @@ class PullCmd (IssueCmd):
         cmd_help = "checkout the remote branch (head) of the pull request"
         @classmethod
         def setup_parser(cls, parser):
-            parser.add_argument('pull',
+            parser.add_argument('pull', type=int,
                 help="number identifying the pull request to checkout")
             parser.add_argument("args",
                 nargs=argparse.REMAINDER,
@@ -1551,14 +1558,10 @@ class PullCmd (IssueCmd):
                 warnf('Checking out a closed pull request '
                     '(closed at {closed_at})!', **pull)
 
-            if pull['head']['repo'] is None:
-                die("Can't checkout pull request {number}, no head repository "
-                    "found (maybe it was deleted?)", **pull)
+            remote_url = pull['base']['repo'][config.urltype]
+            remote_ref = 'pull/{}/head'.format(pull['number'])
 
-            remote_url = pull['head']['repo'][config.urltype]
-            remote_branch = pull['head']['ref']
-
-            cls.git_fetch(remote_url, remote_branch)
+            cls.git_fetch(remote_url, remote_ref)
             git_quiet(1, 'checkout', 'FETCH_HEAD', *args.args)
 
 # This class is top-level just for convenience, because is too big. Is added to
@@ -1603,7 +1606,7 @@ class RebaseCmd (PullUtil):
     def setup_parser(cls, parser):
         group = parser.add_mutually_exclusive_group(required=True)
         group.add_argument('pull',
-            metavar=cls.id_var, nargs='?',
+            metavar=cls.id_var, nargs='?', type=int,
             help="number identifying the pull request to rebase")
         group.add_argument('--continue', dest='action',
             action='store_const', const='--continue',

@@ -6,8 +6,8 @@ git-hub
 Git command line interface to GitHub
 ------------------------------------
 
-:Author: Leandro Lucarella <leandro.lucarella@sociomantic.com>
-:Copyright: 2013 Sociomantic Labs GmbH
+:Author: Leandro Lucarella <leandro.lucarella@dunnhumby.com>
+:Copyright: 2013 dunnhumby Germany GmbH
 :Version: devel
 :Date: |date|
 :Manual section: 1
@@ -75,7 +75,7 @@ COMMANDS
     GitHub's password (will not be stored).
 
   \-b URL, --baseurl=URL
-    GitHub's base URL to use to access the API. Set this when you GitHub API is
+    GitHub's base URL to use to access the API. Set this when your GitHub API is
     in another location other than the default (Enterprise servers usually use
     https://host/api/v3).
 
@@ -195,6 +195,9 @@ COMMANDS
     \-m MSG, --message=MSG
       New issue title (and description). The first line is used as the issue
       title and any text after an empty line is used as the optional body.
+
+    \-t TITLE, --title=TITLE
+      New issue title.
 
     \-e, --edit-message
       Open the default `GIT_EDITOR` to edit the current title (and description)
@@ -469,7 +472,7 @@ from. These are the git config keys used:
   details or options. [default: *ssh_url*]
 
 `hub.baseurl`
-  GitHub's base URL to use to access the API. Set this when you GitHub API is
+  GitHub's base URL to use to access the API. Set this when your GitHub API is
   in another location other than the default (Enterprise servers usually use
   https://host/api/v3). This will be prepended to all GitHub API calls and it
   has to be a full URL, not just something like "www.example.com/api/v3/".
